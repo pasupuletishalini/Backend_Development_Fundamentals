@@ -11,7 +11,7 @@ const express = require('express');
 const app = express();
 
 // Define the port number on which the Express server will listen
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 
 // -----------------------------------------------------------------------------
 // Route 1: GET /
@@ -55,9 +55,14 @@ app.use((req, res) => {
 });
 
 // -----------------------------------------------------------------------------
-// Start the Express Server
+// Start the Express Server (only when run directly in local development)
 // -----------------------------------------------------------------------------
-app.listen(PORT, () => {
-  console.log(`Express Server is running at http://localhost:${PORT}`);
-});
+if (require.main === module) {
+  app.listen(PORT, () => {
+    console.log(`Express Server is running at http://localhost:${PORT}`);
+  });
+}
+
+// Export the Express app for Vercel / serverless deployments
+module.exports = app;
 
