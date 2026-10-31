@@ -11,6 +11,14 @@
 
 ---
 
+## Live Deployment
+
+The Express application is deployed and accessible online:
+- [View Live Application](https://backend-development-fundamentals-three.vercel.app/)
+- **Deployment URL:** https://backend-development-fundamentals-three.vercel.app/
+
+---
+
 ## 1. Objective
 
 The primary objectives of this lab are:
