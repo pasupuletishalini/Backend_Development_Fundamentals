@@ -1,0 +1,11 @@
+# Dependencies
+node_modules/
+
+# Environment variables
+.env
+
+# Local SQLite CLI tools
+tools/
+*.exe
+*.zip
+

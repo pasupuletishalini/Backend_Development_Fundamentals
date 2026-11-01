@@ -1,0 +1,357 @@
+{
+  "info": {
+    "_postman_id": "lab-02-sqlite-crud",
+    "name": "Lab 02 - SQLite Database and CRUD API",
+    "description": "Postman Collection for testing Lab 02 Express and SQLite CRUD endpoints.\nStudent: Pasupuleti Shalini (252U1R1185), Section: CSE-2D (214)",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "bookId",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "1. GET All Books",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 200 OK\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test(\"Response is an array of books\", function () {",
+              "    const jsonData = pm.response.json();",
+              "    pm.expect(jsonData).to.be.an(\"array\");",
+              "    pm.expect(jsonData.length).to.be.at.least(1);",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:3000/books/",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "3000",
+          "path": ["books", ""]
+        },
+        "description": "Retrieves the complete list of all books from the SQLite database."
+      },
+      "response": []
+    },
+    {
+      "name": "2. GET Single Book (ID 1)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 200 OK\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test(\"Response returns the requested book ID 1\", function () {",
+              "    const jsonData = pm.response.json();",
+              "    pm.expect(jsonData).to.have.property(\"id\", 1);",
+              "    pm.expect(jsonData).to.have.property(\"title\");",
+              "    pm.expect(jsonData).to.have.property(\"author\");",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:3000/books/1/",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "3000",
+          "path": ["books", "1", ""]
+        },
+        "description": "Retrieves an existing book by its primary key ID."
+      },
+      "response": []
+    },
+    {
+      "name": "3. GET Nonexistent Book (404 Test)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 404 Not Found\", function () {",
+              "    pm.response.to.have.status(404);",
+              "});",
+              "",
+              "pm.test(\"Response contains not found error message\", function () {",
+              "    const jsonData = pm.response.json();",
+              "    pm.expect(jsonData).to.have.property(\"error\");",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:3000/books/999/",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "3000",
+          "path": ["books", "999", ""]
+        },
+        "description": "Tests 404 response when querying a book ID that does not exist in the database."
+      },
+      "response": []
+    },
+    {
+      "name": "4. POST Create Book",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 201 Created\", function () {",
+              "    pm.response.to.have.status(201);",
+              "});",
+              "",
+              "pm.test(\"Response contains created book and saves bookId variable\", function () {",
+              "    const jsonData = pm.response.json();",
+              "    pm.expect(jsonData).to.have.property(\"message\", \"Book added successfully\");",
+              "    pm.expect(jsonData).to.have.property(\"book\");",
+              "    pm.expect(jsonData.book).to.have.property(\"id\");",
+              "    ",
+              "    // Store dynamically created book ID in collection variable for subsequent requests",
+              "    pm.collectionVariables.set(\"bookId\", jsonData.book.id.toString());",
+              "    console.log(\"Saved collection variable bookId:\", jsonData.book.id);",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"title\": \"Clean Code\",\n  \"author\": \"Robert C. Martin\",\n  \"price\": 650,\n  \"pages\": 464\n}"
+        },
+        "url": {
+          "raw": "http://localhost:3000/books/",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "3000",
+          "path": ["books", ""]
+        },
+        "description": "Inserts a new book record into the SQLite database and dynamically stores its ID."
+      },
+      "response": []
+    },
+    {
+      "name": "5. PUT Update Book",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 200 OK\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test(\"Response contains updated book details\", function () {",
+              "    const jsonData = pm.response.json();",
+              "    pm.expect(jsonData).to.have.property(\"message\", \"Book updated successfully\");",
+              "    pm.expect(jsonData).to.have.property(\"book\");",
+              "    pm.expect(jsonData.book.price).to.eql(750);",
+              "    pm.expect(jsonData.book.title).to.include(\"Agile Software Craftsmanship\");",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"title\": \"Clean Code: A Handbook of Agile Software Craftsmanship\",\n  \"author\": \"Robert C. Martin\",\n  \"price\": 750,\n  \"pages\": 464\n}"
+        },
+        "url": {
+          "raw": "http://localhost:3000/books/{{bookId}}/",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "3000",
+          "path": ["books", "{{bookId}}", ""]
+        },
+        "description": "Updates details of the newly created book using the dynamic {{bookId}} collection variable."
+      },
+      "response": []
+    },
+    {
+      "name": "6. GET Verify Updated Book",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 200 OK\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test(\"Verified updated book matches persisted values\", function () {",
+              "    const jsonData = pm.response.json();",
+              "    const currentBookId = pm.collectionVariables.get(\"bookId\");",
+              "    pm.expect(jsonData.id).to.eql(parseInt(currentBookId));",
+              "    pm.expect(jsonData.price).to.eql(750);",
+              "    pm.expect(jsonData.title).to.include(\"Agile Software Craftsmanship\");",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:3000/books/{{bookId}}/",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "3000",
+          "path": ["books", "{{bookId}}", ""]
+        },
+        "description": "Verifies that the database successfully persisted the updated values for {{bookId}}."
+      },
+      "response": []
+    },
+    {
+      "name": "7. DELETE Book",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 200 OK\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test(\"Response confirms deletion message\", function () {",
+              "    const jsonData = pm.response.json();",
+              "    pm.expect(jsonData).to.have.property(\"message\");",
+              "    pm.expect(jsonData.message).to.include(\"deleted successfully\");",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:3000/books/{{bookId}}/",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "3000",
+          "path": ["books", "{{bookId}}", ""]
+        },
+        "description": "Deletes the book record from the SQLite database using dynamic {{bookId}}."
+      },
+      "response": []
+    },
+    {
+      "name": "8. GET Verify Deleted Book (404 Test)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 404 Not Found after deletion\", function () {",
+              "    pm.response.to.have.status(404);",
+              "});",
+              "",
+              "pm.test(\"Response confirms book no longer exists\", function () {",
+              "    const jsonData = pm.response.json();",
+              "    pm.expect(jsonData).to.have.property(\"error\");",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:3000/books/{{bookId}}/",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "3000",
+          "path": ["books", "{{bookId}}", ""]
+        },
+        "description": "Confirms that querying the deleted {{bookId}} properly returns 404 Not Found."
+      },
+      "response": []
+    },
+    {
+      "name": "9. Unknown Route (404 Fallback)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 404 Not Found\", function () {",
+              "    pm.response.to.have.status(404);",
+              "});",
+              "",
+              "pm.test(\"Response contains route error message\", function () {",
+              "    const jsonData = pm.response.json();",
+              "    pm.expect(jsonData).to.have.property(\"error\");",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:3000/invalid-route",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "3000",
+          "path": ["invalid-route"]
+        },
+        "description": "Tests fallback 404 middleware for unrecognized routes."
+      },
+      "response": []
+    }
+  ]
+}
