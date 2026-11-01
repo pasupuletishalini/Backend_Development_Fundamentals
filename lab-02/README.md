@@ -11,6 +11,21 @@
 
 ---
 
+## Live Deployment
+
+The Express and SQLite CRUD API is deployed and running live as a free Web Service on [Render](https://render.com/):
+
+- **Live Application:** [View Live API (All Books)](https://backend-lab-02-2mdz.onrender.com/books/)
+- **Live Base URL:** https://backend-lab-02-2mdz.onrender.com
+- **GET All Books Endpoint:** https://backend-lab-02-2mdz.onrender.com/books/
+
+> [!NOTE]
+> **Free Tier Sleep / Cold Starts:** Render Free web services automatically spin down (sleep) after 15 minutes of inactivity. When accessed after a period of dormancy, the first request may take 30 to 60 seconds to wake the container. Subsequent requests will respond promptly.
+>
+> **Ephemeral Storage Notice:** The application is hosted on Render's Free tier using containerized ephemeral storage with an embedded SQLite database (`database/books.db`). All 5 CRUD operations (`GET`, `POST`, `PUT`, `DELETE`) operate live during an active session. However, because Render Free does not include persistent disk storage, any modifications (newly created books, updates, or deletions) will reset back to the 10 original canonical records upon container restarts, sleep cycles, or redeployments. Persistent cloud database storage is not claimed.
+
+---
+
 ## 1. Objective
 
 The primary objectives of this lab are:
@@ -327,60 +342,79 @@ Below are the verified screenshots of the SQLite CLI setup, Express server monit
 
 ## 11. Deployment Architecture & Status (Render Free)
 
-- **Deployment Status:** Local implementation 100% complete, tested, and verified. Configured for single-service deployment on **Render Free Web Services**. Live deployment URL is **Pending user deployment**.
+- **Deployment Status:** **Live and Operational**
+- **Hosting Platform:** [Render](https://render.com/) (Free Tier Web Service)
+- **Live Base URL:** https://backend-lab-02-2mdz.onrender.com
+- **Direct Application Link:** [https://backend-lab-02-2mdz.onrender.com/books/](https://backend-lab-02-2mdz.onrender.com/books/)
 - **Application Architecture:**
-  - Single Express application with direct, embedded SQLite (`database/books.db`).
+  - Single Express application with embedded SQLite database (`database/books.db`).
   - Uses native `sqlite` and `sqlite3` packages.
   - Dynamically listens on `process.env.PORT || 3000`.
-  - Fully compatible with Render's Ubuntu/Debian Linux container runtime.
+  - Runs in a containerized Ubuntu/Debian Linux environment on Render.
 
 ### 11.1 Ephemeral Storage Notice
 
 > [!WARNING]
 > **Render Free Plan Uses Ephemeral Storage:**
-> Render Free Web Services run in containerized environments without attached persistent disk storage.
-> - **Runtime Functionality:** When running, all 5 CRUD operations (`GET`, `POST`, `PUT`, `DELETE`) work as expected on `database/books.db`.
-> - **Inactivity & Restarts:** On Render Free, services automatically spin down (sleep) after 15 minutes of inactivity. When a new request arrives, Render spins up a fresh container instance from your Git repository.
-> - **Data Reset:** Any modifications made at runtime (such as newly added books or deletions) will reset back to the committed `database/books.db` file (the 10 original sample records) upon redeployment or cold restarts. Persistent cloud storage is not provided or claimed on this free tier.
+> Render Free Web Services operate in containerized virtual environments without attached persistent disks.
+> - **Live Runtime CRUD:** All 5 CRUD operations (`GET`, `POST`, `PUT`, `DELETE`) function live against `database/books.db` while the container is active.
+> - **Inactivity Sleep Cycle:** On the free plan, Render automatically spins down (sleeps) instances after 15 minutes of inactivity. When a new incoming request arrives, Render spins up a fresh container instance from the committed GitHub repository.
+> - **Data Reset:** Any modifications made at runtime (such as newly inserted books, edited titles, or deleted IDs) will reset back to the committed `database/books.db` file (the 10 canonical sample records) whenever the service spins down or restarts. Persistent cloud storage is not claimed or supported on this free tier.
 
-### 11.2 Render Dashboard Configuration Settings
+### 11.2 Instructions for Accessing the Deployed API
 
-When creating the Web Service on [Render](https://render.com/), use the following exact settings:
+The deployed API can be accessed via any web browser, Postman, or cURL:
+
+#### 1. Browser Access
+- **API Overview & Student Details:**
+  [https://backend-lab-02-2mdz.onrender.com/](https://backend-lab-02-2mdz.onrender.com/)
+- **Retrieve All Books:**
+  [https://backend-lab-02-2mdz.onrender.com/books/](https://backend-lab-02-2mdz.onrender.com/books/)
+- **Retrieve Single Book (ID 1):**
+  [https://backend-lab-02-2mdz.onrender.com/books/1/](https://backend-lab-02-2mdz.onrender.com/books/1/)
+
+#### 2. Postman / cURL Testing of All 5 CRUD Endpoints
+
+- **GET All Books (`GET /books/`):**
+  ```bash
+  curl -X GET https://backend-lab-02-2mdz.onrender.com/books/
+  ```
+
+- **GET Single Book (`GET /books/:bookId/`):**
+  ```bash
+  curl -X GET https://backend-lab-02-2mdz.onrender.com/books/1/
+  ```
+
+- **POST Create Book (`POST /books/`):**
+  ```bash
+  curl -X POST https://backend-lab-02-2mdz.onrender.com/books/ \
+    -H "Content-Type: application/json" \
+    -d '{"title": "Clean Code", "author": "Robert C. Martin", "price": 650, "pages": 464}'
+  ```
+
+- **PUT Update Book (`PUT /books/:bookId/`):**
+  ```bash
+  curl -X PUT https://backend-lab-02-2mdz.onrender.com/books/11/ \
+    -H "Content-Type: application/json" \
+    -d '{"title": "Clean Code (Second Edition)", "author": "Robert C. Martin", "price": 750, "pages": 464}'
+  ```
+
+- **DELETE Book (`DELETE /books/:bookId/`):**
+  ```bash
+  curl -X DELETE https://backend-lab-02-2mdz.onrender.com/books/11/
+  ```
+
+### 11.3 Render Dashboard Configuration Settings
+
+For reference or redeployment, the service was configured using the following parameters:
 
 | Setting Field | Configuration Value | Notes |
 | :--- | :--- | :--- |
 | **Service Type** | `Web Service` | Standard Node.js web server |
-| **Repository** | `https://github.com/pasupuletishalini/Backend_Development_Fundamentals` | Your connected GitHub repo |
+| **Repository** | `https://github.com/pasupuletishalini/Backend_Development_Fundamentals` | Connected GitHub repo |
 | **Root Directory** | `lab-02` | **Crucial:** Directs Render to build inside `lab-02` |
 | **Environment / Runtime** | `Node` | Node.js v20+ / v22+ / v24+ |
 | **Build Command** | `npm install` | Installs `express`, `sqlite`, and `sqlite3` |
 | **Start Command** | `node server.js` | Alternatively: `npm start` |
 | **Instance Type** | `Free` | Free tier ($0/month) |
 | **Environment Variables** | *None required* | Render automatically injects `PORT` |
-
-### 11.3 Step-by-Step Deployment Instructions
-
-1. **Push Changes to GitHub:**
-   ```powershell
-   git add lab-02
-   git commit -m "feat(lab-02): prepare single SQLite Express app for Render deployment"
-   git push origin main
-   ```
-
-2. **Create New Web Service on Render:**
-   - Log into [dashboard.render.com](https://dashboard.render.com/).
-   - Click **New +** > **Web Service**.
-   - Select your repository `pasupuletishalini/Backend_Development_Fundamentals`.
-
-3. **Configure the Service Details:**
-   - Set **Name:** `backend-fundamentals-lab-02` (or your preferred name).
-   - Set **Root Directory:** `lab-02`.
-   - Set **Runtime:** `Node`.
-   - Set **Build Command:** `npm install`.
-   - Set **Start Command:** `node server.js`.
-   - Select the **Free** instance plan.
-
-4. **Deploy and Test:**
-   - Click **Create Web Service**.
-   - Wait 2–3 minutes for Render to install dependencies, run `node server.js`, and transition the status to **Live**.
-   - Test your live URL (e.g. `https://backend-fundamentals-lab-02.onrender.com/books/`) in Postman or your browser.
