@@ -6,7 +6,6 @@
 
 const express = require('express');
 const path = require('path');
-const fs = require('fs');
 const { open } = require('sqlite');
 const sqlite3 = require('sqlite3');
 
@@ -15,21 +14,9 @@ const app = express();
 // Middleware to parse incoming JSON request bodies
 app.use(express.json());
 
-// Server port configuration
+// Server port configuration (Render assigns process.env.PORT dynamically)
 const PORT = process.env.PORT || 3000;
-
-// Resolve database file path (handles local dev and Vercel serverless environments)
-let dbPath = path.join(__dirname, 'database', 'books.db');
-
-if (process.env.VERCEL) {
-  // On Vercel serverless, the repository filesystem is read-only.
-  // Copy the SQLite database to /tmp so write operations (POST, PUT, DELETE) succeed.
-  const tempDbPath = path.join('/tmp', 'books.db');
-  if (!fs.existsSync(tempDbPath) && fs.existsSync(dbPath)) {
-    fs.copyFileSync(dbPath, tempDbPath);
-  }
-  dbPath = tempDbPath;
-}
+const dbPath = path.join(__dirname, 'database', 'books.db');
 
 let db = null;
 
@@ -42,9 +29,9 @@ const initializeDBAndServer = async () => {
       filename: dbPath,
       driver: sqlite3.Database
     });
-    console.log(`Connected to SQLite database successfully at: ${dbPath}`);
+    console.log('Database connected successfully.');
 
-    // Start Express server only when running locally (not when imported as a module)
+    // Start Express server only when executed directly (not when required by tests)
     if (require.main === module) {
       app.listen(PORT, () => {
         console.log(`Express server is running at http://localhost:${PORT}`);
@@ -52,14 +39,16 @@ const initializeDBAndServer = async () => {
     }
   } catch (error) {
     console.error(`Database connection error: ${error.message}`);
-    process.exit(1);
+    if (require.main === module) {
+      process.exit(1);
+    }
   }
 };
 
 // Initialize database and start server
 initializeDBAndServer();
 
-// Middleware to ensure DB connection is ready (useful for serverless environments)
+// Middleware to ensure DB connection is ready before handling requests
 app.use(async (req, res, next) => {
   if (!db) {
     try {
@@ -68,7 +57,10 @@ app.use(async (req, res, next) => {
         driver: sqlite3.Database
       });
     } catch (err) {
-      return res.status(500).json({ error: 'Database connection failed' });
+      return res.status(500).json({
+        error: 'Database connection failed',
+        message: err.message
+      });
     }
   }
   next();
@@ -231,5 +223,5 @@ app.use((req, res) => {
   res.status(404).json({ error: '404 Not Found: The requested route does not exist.' });
 });
 
-// Export app for testing and Vercel serverless deployment
+// Export app for testing and serverless deployment
 module.exports = app;

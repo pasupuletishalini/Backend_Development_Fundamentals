@@ -38,6 +38,7 @@ The primary objectives of this lab are:
   - `sqlite`: Promise-based SQLite client wrapper for Node.js
   - `sqlite3`: Native SQLite3 driver bindings
   - `nodemon`: Development tool that monitors code changes and automatically restarts the server
+- **Hosting / Deployment Target:** [Render](https://render.com/) (Free Web Service)
 - **Command Line Tool:** Official SQLite CLI (`sqlite3.exe`)
 - **API Testing:** Postman & Node.js HTTP Test Suite
 
@@ -49,7 +50,7 @@ The primary objectives of this lab are:
 Backend_Development_Fundamentals/
 └── lab-02/
     ├── database/
-    │   ├── books.db                    # SQLite database file containing the book table
+    │   ├── books.db                    # Local SQLite database file containing the book table
     │   └── schema.sql                  # Table schema and 10 sample book records
     ├── screenshots/                    # Output screenshots for submission
     │   ├── 01-database-creation.png
@@ -67,9 +68,9 @@ Backend_Development_Fundamentals/
     ├── package.json                    # Project dependencies and npm scripts
     ├── package-lock.json               # Dependency lockfile
     ├── README.md                       # Comprehensive lab documentation
-    ├── server.js                       # Express server with SQLite connection & CRUD routes
+    ├── server.js                       # Express server with direct SQLite connection & CRUD routes
     ├── test-endpoints.js               # Automated local HTTP endpoint test suite
-    └── vercel.json                     # Vercel serverless deployment configuration
+    └── vercel.json                     # Vercel deployment configuration
 ```
 
 ---
@@ -318,23 +319,68 @@ Below are the verified screenshots of the SQLite CLI setup, Express server monit
 - **Cause:** SQLite operations in Node.js are asynchronous. If `app.listen()` is called before `open()` resolves, early incoming requests crash due to `db` being `null`.
 - **Solution:** Implemented the asynchronous `initializeDBAndServer()` function to `await open(...)` before starting the server, ensuring the database connection is fully active before listening for requests.
 
-### Problem 4: Serverless Read-Only Filesystem & Persistence on Vercel
-- **Cause:** Vercel Functions execute in a serverless environment where the project filesystem is strictly read-only. While copying `books.db` to `/tmp` allows write operations to execute without a `SQLITE_READONLY` crash, `/tmp` is ephemeral and isolated to each container instance (scale-to-zero resets it; concurrent containers do not share writes).
-- **Solution:** For standard college lab evaluation, the local SQLite database (`database/books.db`) is the primary, required persistent storage. For production cloud deployment on Vercel, the recommended architecture is integrating a remote SQLite-compatible database service (such as [Turso](https://turso.tech) via `@libsql/client`), using environment variables (`TURSO_DATABASE_URL` and `TURSO_AUTH_TOKEN`) to persist writes across all serverless instances.
+### Problem 4: Ephemeral Filesystem Considerations on Free Cloud Hosting (Render Free)
+- **Cause:** Render Free hosts applications as a Web Service running inside a containerized Linux instance. The instance filesystem is ephemeral and lacks an attached persistent disk on the free plan. While the committed SQLite file (`database/books.db`) functions normally with read and write operations during the active lifecycle of the container, any runtime modifications (such as newly inserted books or edits) will reset to the original repository state whenever the service restarts, spins down after 15 minutes of inactivity, or redeploys.
+- **Solution:** For academic coursework and lab evaluation, having the application load the committed `database/books.db` file (with all 10 canonical sample records) ensures a reliable, repeatable initial state with zero external credentials or dependencies. In a production enterprise system requiring persistent relational storage across restarts, a managed cloud database (such as PostgreSQL) or an attached persistent disk would be provisioned.
 
 ---
 
-## 11. Deployment Architecture & Status
+## 11. Deployment Architecture & Status (Render Free)
 
-- **Status:** Local implementation 100% complete and verified. Vercel configuration files (`vercel.json`) are prepared. Public deployment is pending user authorization.
-- **Local Environment (Required by Lab Syllabus):** Uses embedded SQLite (`database/books.db`) with `sqlite` and `sqlite3` driver.
-- **Cloud Architecture (Optional Vercel Deployment):**
-  1. Authenticate with Vercel in PowerShell:
-     ```powershell
-     npx.cmd vercel login
-     ```
-  2. Deploy `lab-02` to production:
-     ```powershell
-     npx.cmd vercel --prod
-     ```
-  3. (Optional for persistent cloud storage): Link a free Turso SQLite database and supply `TURSO_DATABASE_URL` in the Vercel project environment variables.
+- **Deployment Status:** Local implementation 100% complete, tested, and verified. Configured for single-service deployment on **Render Free Web Services**. Live deployment URL is **Pending user deployment**.
+- **Application Architecture:**
+  - Single Express application with direct, embedded SQLite (`database/books.db`).
+  - Uses native `sqlite` and `sqlite3` packages.
+  - Dynamically listens on `process.env.PORT || 3000`.
+  - Fully compatible with Render's Ubuntu/Debian Linux container runtime.
+
+### 11.1 Ephemeral Storage Notice
+
+> [!WARNING]
+> **Render Free Plan Uses Ephemeral Storage:**
+> Render Free Web Services run in containerized environments without attached persistent disk storage.
+> - **Runtime Functionality:** When running, all 5 CRUD operations (`GET`, `POST`, `PUT`, `DELETE`) work as expected on `database/books.db`.
+> - **Inactivity & Restarts:** On Render Free, services automatically spin down (sleep) after 15 minutes of inactivity. When a new request arrives, Render spins up a fresh container instance from your Git repository.
+> - **Data Reset:** Any modifications made at runtime (such as newly added books or deletions) will reset back to the committed `database/books.db` file (the 10 original sample records) upon redeployment or cold restarts. Persistent cloud storage is not provided or claimed on this free tier.
+
+### 11.2 Render Dashboard Configuration Settings
+
+When creating the Web Service on [Render](https://render.com/), use the following exact settings:
+
+| Setting Field | Configuration Value | Notes |
+| :--- | :--- | :--- |
+| **Service Type** | `Web Service` | Standard Node.js web server |
+| **Repository** | `https://github.com/pasupuletishalini/Backend_Development_Fundamentals` | Your connected GitHub repo |
+| **Root Directory** | `lab-02` | **Crucial:** Directs Render to build inside `lab-02` |
+| **Environment / Runtime** | `Node` | Node.js v20+ / v22+ / v24+ |
+| **Build Command** | `npm install` | Installs `express`, `sqlite`, and `sqlite3` |
+| **Start Command** | `node server.js` | Alternatively: `npm start` |
+| **Instance Type** | `Free` | Free tier ($0/month) |
+| **Environment Variables** | *None required* | Render automatically injects `PORT` |
+
+### 11.3 Step-by-Step Deployment Instructions
+
+1. **Push Changes to GitHub:**
+   ```powershell
+   git add lab-02
+   git commit -m "feat(lab-02): prepare single SQLite Express app for Render deployment"
+   git push origin main
+   ```
+
+2. **Create New Web Service on Render:**
+   - Log into [dashboard.render.com](https://dashboard.render.com/).
+   - Click **New +** > **Web Service**.
+   - Select your repository `pasupuletishalini/Backend_Development_Fundamentals`.
+
+3. **Configure the Service Details:**
+   - Set **Name:** `backend-fundamentals-lab-02` (or your preferred name).
+   - Set **Root Directory:** `lab-02`.
+   - Set **Runtime:** `Node`.
+   - Set **Build Command:** `npm install`.
+   - Set **Start Command:** `node server.js`.
+   - Select the **Free** instance plan.
+
+4. **Deploy and Test:**
+   - Click **Create Web Service**.
+   - Wait 2–3 minutes for Render to install dependencies, run `node server.js`, and transition the status to **Live**.
+   - Test your live URL (e.g. `https://backend-fundamentals-lab-02.onrender.com/books/`) in Postman or your browser.
